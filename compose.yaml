@@ -1,0 +1,58 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: php-apache
+    volumes:
+      - ./src:/var/www/html
+      - ./apache.conf:/etc/apache2/conf-available/servername.conf
+    ports:
+      - "8000:80"
+    depends_on:
+      - db1
+      - db2
+    command: /bin/bash -c "ln -s /etc/apache2/conf-available/servername.conf /etc/apache2/conf-enabled/servername.conf && apache2-foreground"
+
+
+  db1:
+    image: mysql:8.0
+    container_name: moviedb
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: moviedb
+    volumes:
+      - moviedb-data:/var/lib/mysql
+      - ./mySqlDB/movieDB.sql:/docker-entrypoint-initdb.d/movieDB.sql
+    ports:
+      - "3306:3306"
+  db2:
+    image: mysql:8.0
+    container_name: bookstore
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: bookstore
+    volumes:
+      - bookstore-data:/var/lib/mysql
+      - ./mySqlDB/bookDB.sql:/docker-entrypoint-initdb.d/bookDB.sql
+    ports:
+      - "3307:3306"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    depends_on:
+      - db1
+      - db2
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db1
+      PMA_USER: root
+      PMA_PASSWORD: admin
+
+volumes:
+  moviedb-data:
+    driver: local
+  bookstore-data:
+    driver: local
